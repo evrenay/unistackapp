@@ -3,12 +3,13 @@ var db = require('./db');
 var router = express.Router();
 
 router.post("/api/v1/post",function (req, res) {
-var Name= req.body.Name;
-var Surname = req.body.Surname;
-var Email = req.body.Email;
+    var data = req.body;
+    console.log(data);
+var Name= req.body.uname;
+var Surname = req.body.usurname;
+var Email = req.body.uemail;
 
-
-db.query("INSERT INTO User(Name, Surname, Email) VALUES(?,?,?)",[Name,Surname,Email],function (err,result) {
+    db.query("INSERT INTO user(uName, uSurname, uEmail) VALUES(?,?,?)", [Name, Surname, Email], function (err,result) {
     if (err){
         return res.send({code: 400, message:"db hatası"})
     }
