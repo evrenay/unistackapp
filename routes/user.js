@@ -1,20 +1,249 @@
+var randomstring = require("randomstring");
+var nodemailer = require('nodemailer');
+var passwordHash = require('password-hash');
+var CryptoJS = require("crypto-js");
 var express = require('express');
+var cron = require('node-cron');
 var db = require('./db');
 var router = express.Router();
 
-router.post("/api/v1/post",function (req, res) {
+
+router.post("/register",function (req, res) {
     var data = req.body;
     console.log(data);
-var Name= req.body.uname;
-var Surname = req.body.usurname;
-var Email = req.body.uemail;
+    var name= req.body.uname;
+    var surname = req.body.usurname;
+    var email = req.body.uemail;
+    var password = req.body.upassword;
 
-    db.query("INSERT INTO user(uName, uSurname, uEmail) VALUES(?,?,?)", [Name, Surname, Email], function (err,result) {
-    if (err){
-        return res.send({code: 400, message:"db hatası"})
+    var hashedPassword = passwordHash.generate(password);
+    console.log(hashedPassword);
+
+    var activate_Code = randomstring.generate(15);
+var user_type=0;
+if(!name){
+    return res.send({code: 400, message:"Kullanıcı adı eksik" });
+}
+ if(!surname){
+    return res.send({code: 400, message:"Şifre eksik"});
+}
+ if(!email){
+   return res.send({code: 400, message:"Email eksik"});
+ }
+ if(!password){
+     return res.send({code: 400, message:"Password Eksik"});
+ }
+ // if (!(email.toLowerCase().endsWith(".edu.tr"))){
+ //        return res.send({code: 400, message: "üniversite maili değil."})
+ //    }
+    if((email.toLowerCase().search(".ogr"))== -1){
+        user_type=1;
     }
-    var uid= result.insertId;
-    return res.send({code: 200, message:"kayıt başarılı"})
+    idCrypoo = function (id) {
+        var ciphertext = CryptoJS.AES.encrypt(id.toString(),'evren1numara');
+        console.log(ciphertext);
+        return ciphertext;
+    };
+//if exist username ?
+    db.query("SELECT * FROM users WHERE email=?",[email],function (err,result) {
+        if (result.length == 1){
+            res.send({code: 400, message:"Bu email daha önceden alınmış"});
+        }
+        else {
+            db.query("INSERT INTO users(name, surname, email, password, user_type, activation_status, activation_code, created_at) VALUES(?,?,?,?,?,?,?,NOW())", [name, surname, email, hashedPassword, user_type, 0, activate_Code], function (err,result) {
+            if (err){
+                return res.send({code: 400, message:"db hatası"})
+            }
+            else{
+                 var user_id = result.insertId;
+                    timer(user_id);
+
+
+                var transporter = nodemailer.createTransport({
+                    service: 'yandex',
+                    host: 'smtp.yandex.com.tr',
+                    port: 465,
+                    secure: true,
+                    auth: {
+                        user: 'activate@unistackapp.com',
+                        pass: '123654...'
+                    }
+                });
+                console.log(user_id);
+                var link="http://"+req.get('host')+"/deneme/verify?id="+activate_Code+"&u="+encodeURIComponent(idCrypoo(user_id).toString());
+                var mailOptions = {
+                    from: 'activate@unistackapp.com',
+                    to: email,
+                    subject: 'Please confirm your Email account',
+                    html : "Hello,<br> Please Click on the link to verify your email.<br><a href="+link+">Click here to verify</a>"
+                };
+                transporter.sendMail(mailOptions, function(error, info){
+                    if (error) {
+                        return res.send({code: 400, error:"Mail gönderilirken bir hata oluştu..."});
+                    } else {
+                        return res.send({code: 200, message:"Mail başarılı bir şekilde gönderildi..."});
+                    }
+                });
+
+
+
+
+
+            }
+        });}
+    });
+ timer = function (id) {
+     var task = cron.schedule('*/10 * * * *', function(){
+//first tokena geri dön;
+         var newactivation_code = randomstring.generate(15);
+         console.log(newactivation_code);
+         db.query("UPDATE users SET activation_code=? WHERE id=?",[newactivation_code,id],function (err,result) {
+                if (err){
+                    return res.send({code:400, message:"db hatasııı"});
+                }
+                else {
+                    console.log("code patates");
+                    task.destroy();
+
+                }
+         });
+     });
+ };
+
+
+
+
+
+
 });
+
+router.post('/password',function (req,res) {
+    var email = req.body.email;
+    var token = randomstring.generate(15);
+
+
+
+    dataInsert = function (id,new_password) {
+        console.log(new_password);
+        console.log(token);
+        console.log(id);
+      db.query("INSERT INTO change_password(eposta, user_id, new_password, spam, token, created_at) VALUES(?,?,?,?,?,NOW())",[email, id, new_password, 1, token],function (err,result) {
+          if (err){
+              return res.send({code: 400, message: "db hatası kardes"});
+          }
+          else {
+              db.query("UPDATE users SET password=? WHERE id=?",[new_password,id],function (err,result) {
+                  if (err){
+                      return res.send({code: 400, message: "db hatası kardes"});
+                  }
+                  else{
+                      console.log("dbde şifre güncellendi...")
+                  }
+              });
+              console.log("kayıt başarılı...");
+          }
+
+      });
+    };
+
+
+
+
+    mailSend = function(id,new_password){
+        var transporter = nodemailer.createTransport({
+            service: 'yandex',
+            host: 'smtp.yandex.com.tr',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'activate@unistackapp.com',
+                pass: '123654...'
+            }
+        });
+
+        var mailOptions = {
+            from: 'activate@unistackapp.com',
+            to: email,
+            subject: 'Please confirm your Email account',
+            html : "Hello,<br> Geçici Şifreniz:  .<br>"+new_password
+        };
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+                return res.send({code: 400, error:"Mail gönderilirken bir hata oluştu..."});
+            } else {
+                var hashedPassword = passwordHash.generate(new_password);
+                console.log(hashedPassword);
+                dataInsert(id,hashedPassword);
+                console.log(token);
+                timer(token);
+                return res.send({code: 200, message:"Mail başarılı bir şekilde gönderildi..."});
+            }
+        });
+    };
+
+    spamControl =function (id,new_pass) {
+        db.query("SELECT spam FROM change_password WHERE eposta=?",[email],function (err,result) {
+            if(result.length==0){
+                mailSend(id,new_pass);
+            }
+            else if(result.length>=1) {
+                var index = (result.length)-1;
+                console.log(index);
+                var spam = result[index].spam;
+                console.log(spam);
+                console.log(result);
+                if (err){
+                    return res.send({code: 400, message: "db hatası kardes"});
+                }
+                else if(spam==1){
+                    return res.send({code: 400, message: "Mail gönderildi...mail gelmedi ise 5 dakika sonra tekrar deneyin"})
+                }
+                else {
+
+                    mailSend(id,new_pass);
+
+                }
+
+            }
+        });
+    };
+
+    //Get id from database
+    db.query("SELECT * FROM users WHERE email=?",[email],function (err,result) {
+        if (err){
+            return res.send({code: 400, message: "db hatası kardes"});
+        }
+        else if (result.length == 1){
+                db.query("SELECT id FROM users WHERE email=?",[email],function (err,result)  {
+                    var string=JSON.stringify(result);
+                    var json =  JSON.parse(string);
+                    var id = (json[0].id).toString();
+                    var new_password = randomstring.generate(6);
+                    console.log(new_password);
+                    spamControl(id,new_password);
+                });
+        }
+        else {
+            return res.send({code: 400, message:"kullanıcı kaydı bulunamadı"})
+        }
+    });
+
+    timer = function (token) {
+        var task = cron.schedule('*/5 * * * *', function(){
+            db.query("UPDATE change_password SET spam=? WHERE token=?",[0,token],function (err,result) {
+                if (err){
+                    return res.send({code:400, message:"db hatasııı"});
+                }
+                else {
+                    console.log("spam pasif");
+                    task.destroy();
+
+                }
+            });
+        });
+    };
+
+
 });
+
 module.exports = router;
