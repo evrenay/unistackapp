@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a91d3168-a1c4-4130-b7d3-06facfcfe33b" name="Default" comment="denemee">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/routes/change.js" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/routes/deneme.js" afterPath="$PROJECT_DIR$/routes/account.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/db.js" afterPath="$PROJECT_DIR$/routes/db.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/mail.js" afterPath="$PROJECT_DIR$/routes/mail.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/user.js" afterPath="$PROJECT_DIR$/routes/user.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -320,7 +314,7 @@
       <workItem from="1507070707071" duration="5000" />
       <workItem from="1507071432481" duration="8829000" />
       <workItem from="1507124075552" duration="6527000" />
-      <workItem from="1507148319066" duration="56000" />
+      <workItem from="1507148319066" duration="191000" />
     </task>
     <task id="LOCAL-00001" summary="deneme">
       <created>1504560650754</created>
@@ -357,11 +351,18 @@
       <option name="project" value="LOCAL" />
       <updated>1506705651679</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="denemee">
+      <created>1507148388849</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1507148388849</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="250881000" />
+    <option name="totallyTimeSpent" value="251016000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
