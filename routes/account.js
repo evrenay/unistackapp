@@ -1,5 +1,6 @@
 var express = require('express');
 var db = require('./db');
+var passwordHash = require('password-hash');
 var CryptoJS = require("crypto-js");
 var randomstring = require("randomstring");
 var url = require('url');
@@ -70,11 +71,55 @@ router.get('/verify',function(req,res){
 
             }
         });
+});
+
+router.post("/login",function (req,res) {
+    var data = req.body;
+    console.log(data);
+    var email = req.body.email;
+    var password = req.body.password;
+    db.query("SELECT * FROM users WHERE email=?",[email],function (err,result) {
+        if(err){
+            res.send({code:400,error:"db hatası"});
+        }
+        else if(result.length==1){
+            var hashedPassword = result[0].password;
+            var statusPassword = passwordHash.isHashed(hashedPassword);
+            var verifyPassword = passwordHash.verify(password,hashedPassword);
+            if(verifyPassword== true && statusPassword== true){
+                var userType = result[0].user_type;
+                if(userType == 0 ){
+                    var activationStatus = result[0].activation_status;
+                    if(activationStatus == 0){
+                        res.send({code:301, message:"hesap aktif değil ve öğrenci"});
+                    }
+                    else if(activationStatus == 1){
+                        res.send({code:201, message:"login başarılı öğrenci"});
+                    }
+
+                }
+                else if(userType == 1){
+                    var activationStatus = result[0].activation_status;
+                    if(activationStatus == 0){
+                        res.send({code:302, message:"hesap aktif değil ve hoca"});
+                    }
+                    else if(activationStatus == 1){
+                        res.send({code:202, message:"login başarılı hoca"});
+                    }
+                }
+            }
+            else {
+                res.send({code:400, error:"şifre yanlış"});
+            }
 
 
-
-
-
+        }
+        else {
+            res.send({code:400, error:"bu mailde bir hesap bulunamadı."});
+        }
+    });
 
 });
+
+
 module.exports = router;
